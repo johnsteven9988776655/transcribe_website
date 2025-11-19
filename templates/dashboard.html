@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Audio Transcription Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .welcome-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .welcome-title {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-subtitle {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-badge {
+            background: #ffc107;
+            color: #333;
+            padding: 0.3rem 0.8rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .upload-btn {
+            background: #28a745;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: #218838;
+            color: white;
+        }
+
+        .admin-btn {
+            background: #007bff;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .admin-btn:hover {
+            background: #0056b3;
+            color: white;
+        }
+
+        .history-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .transcription-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .transcription-table th,
+        .transcription-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .transcription-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0 0.2rem;
+            transition: background 0.3s;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .btn-download {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #0056b3;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+            min-width: 150px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .flash-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .transcription-table {
+                font-size: 0.8rem;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Chat Widget Styles */
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .chat-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.3s;
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-container {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 0.8rem;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: #007bff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e9ecef;
+            align-self: flex-start;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .chat-send {
+            padding: 0.8rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .chat-send:hover {
+            background: #0056b3;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #666;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .chat-btn {
+            background: #6f42c1;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .chat-btn:hover {
+            background: #5a32a3;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 300px;
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand"> Audio transcription</div>
+            <div class="nav-links">
+                <span>Hello  {{ current_user.username }}</span>
+                <a href="{{ url_for('upload_page') }}"> Upload</a>
+                <a href="{{ url_for('logout') }}"> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome {{ current_user.username }}
+                {% if current_user.is_admin %}
+                    <span class="admin-badge">ADMIN</span>
+                {% endif %}
+            </h1>
+            <p class="welcome-subtitle">Manage your audio transcriptions and upload new files</p>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('upload_page') }}" class="upload-btn"> Upload New Audio File</a>
+                <a href="{{ url_for('chat_page') }}" class="chat-btn"> AI Chat</a>
+                
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="admin-btn"> Admin Panel</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_transcriptions }}</div>
+                <div class="stat-label">Total Transcriptions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ completed_transcriptions }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ processing_transcriptions }}</div>
+                <div class="stat-label">Processing</div>
+            </div>
+        </div>
+
+        <!-- Transcription History -->
+        <div class="history-section">
+            <h2 class="section-title"> Your transcription history</h2>
+            
+            {% if transcriptions %}
+                <div style="overflow-x: auto;">
+                    <table class="transcription-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Status</th>
+                                <th>Model</th>
+                                <th>Duration</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transcription in transcriptions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ transcription.original_filename }}</strong>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ transcription.status }}">
+                                        {% if transcription.status == 'completed' %}
+                                             Completed
+                                        {% elif transcription.status == 'processing' %}
+                                             Processing
+                                        {% elif transcription.status == 'error' %}
+                                             Error
+                                        {% else %}
+                                             Uploaded
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ transcription.model_size|title }}</td>
+                                <td>{{ transcription.duration or '-' }}</td>
+                                <td>{{ transcription.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                                <td class="actions-cell">
+                                    {% if transcription.status == 'completed' and transcription.output_file %}
+                                        <a href="{{ url_for('download_file', filename=transcription.output_file) }}" 
+                                           class="action-btn btn-download">Download</a>
+                                    {% endif %}
+                                    {% if transcription.status == 'processing' %}
+                                        <a href="{{ url_for('results', job_id=transcription.job_id) }}" 
+                                           class="action-btn btn-download">View Progress</a>
+                                    {% endif %}
+                                    <a href="{{ url_for('delete_transcription', transcription_id=transcription.id) }}" 
+                                       class="action-btn btn-delete"
+                                       onclick="return confirm('Are you sure you want to delete this transcription?')">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📁</div>
+                    <h3>No transcriptions yet</h3>
+                    <p>Upload your first audio file to get started!</p>
+                    <br>
+                    <a href="{{ url_for('upload_page') }}" class="upload-btn"> Upload Your First File</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget">
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                💬 Chat with AI Assistant
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    Hi {{ current_user.username }}! 👋 I'm your AI assistant. I can help you with questions about:
+                    <br><br>
+                    • Audio transcription process
+                    <br>• Supported file formats
+                    <br>• How to use this service
+                    <br>• General questions
+                    <br><br>
+                    What would you like to know?
+                </div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator">
+                <span>AI is typing</span>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything..." maxlength="500">
+                <button class="chat-send" id="chatSend">Send</button>
+            </div>
+        </div>
+        <button class="chat-toggle" id="chatToggle">💬</button>
+    </div>
+
+    <script>
+        // Chat functionality
+        const chatToggle = document.getElementById('chatToggle');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // Toggle chat window
+        chatToggle.addEventListener('click', () => {
+            chatContainer.classList.toggle('active');
+            if (chatContainer.classList.contains('active')) {
+                chatInput.focus();
+            }
+        });
+
+        // Send message function
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate AI response delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = getAIResponse(message);
+                addMessage(response, 'ai');
+            }, 1000 + Math.random() * 2000);
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show/hide typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Simple AI response system
+        function getAIResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Transcription-related responses
+            if (lowerMessage.includes('transcription') || lowerMessage.includes('transcribe')) {
+                return "I can help with transcription! Our service converts audio files to text using AI. Simply upload your audio file, choose a model size, and wait for processing. The transcription will be available for download when complete.";
+            }
+            
+            if (lowerMessage.includes('file format') || lowerMessage.includes('supported') || lowerMessage.includes('upload')) {
+                return "We support these audio formats: MP3, WAV, MP4, AVI, M4A, FLAC, and OGG. Maximum file size is 500MB. Just drag and drop or browse to select your file!";
+            }
+            
+            if (lowerMessage.includes('model') || lowerMessage.includes('accuracy') || lowerMessage.includes('quality')) {
+                return "We offer different Whisper AI models: Tiny (fastest), Base (balanced), Small, Medium, and Large (most accurate). Larger models take longer but provide better accuracy, especially for difficult audio.";
+            }
+            
+            if (lowerMessage.includes('time') || lowerMessage.includes('long') || lowerMessage.includes('duration')) {
+                return "Processing time depends on audio length and model size. Typically: Tiny model processes in real-time, while Large model may take 2-3x the audio duration. You can monitor progress on the results page.";
+            }
+            
+            if (lowerMessage.includes('cost') || lowerMessage.includes('price') || lowerMessage.includes('free')) {
+                return "Great news! This transcription service is completely free to use. There are no hidden costs or limits on the number of files you can transcribe.";
+            }
+            
+            if (lowerMessage.includes('delete') || lowerMessage.includes('remove')) {
+                return "You can delete transcriptions from your dashboard. Click the 'Delete' button next to any transcription. This will remove both the audio file and transcription text permanently.";
+            }
+            
+            if (lowerMessage.includes('download')) {
+                return "Once transcription is complete, you'll see a 'Download' button in your dashboard. This downloads a .txt file containing the transcribed text. You can also view progress during processing.";
+            }
+            
+            // General greetings
+            if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+                return `Hello ${document.querySelector('.welcome-title').textContent.split(' ')[1]}! How can I assist you with your transcription needs today?`;
+            }
+            
+            if (lowerMessage.includes('help') || lowerMessage.includes('how')) {
+                return "I'm here to help! You can ask me about:\n• How to transcribe audio files\n• Supported file formats\n• Model differences\n• Processing times\n• Account features\n\nWhat specific question do you have?";
+            }
+            
+            if (lowerMessage.includes('thank')) {
+                return "You're welcome! I'm happy to help. Feel free to ask if you have any other questions about the transcription service.";
+            }
+            
+            // Admin-related
+            if (lowerMessage.includes('admin') && document.querySelector('.admin-badge')) {
+                return "As an admin, you have access to the Admin Panel where you can manage users, view all transcriptions, monitor system stats, and perform administrative tasks. Check the admin dashboard for detailed insights.";
+            }
+            
+            // Error handling
+            if (lowerMessage.includes('error') || lowerMessage.includes('problem') || lowerMessage.includes('issue')) {
+                return "If you're experiencing issues:\n1. Check that your file format is supported\n2. Ensure file size is under 500MB\n3. Try refreshing the page\n4. For persistent problems, try a different audio file\n\nMost issues resolve with these steps!";
+            }
+            
+            // Default responses for unrecognized queries
+            const defaultResponses = [
+                "I'm not sure about that specific question, but I'm here to help with transcription-related queries. Could you ask about file formats, models, or how to use the service?",
+                "That's an interesting question! I specialize in helping with audio transcription. Is there something specific about the transcription process you'd like to know?",
+                "I'd love to help! I'm designed to assist with transcription service questions. Feel free to ask about uploading files, processing times, or account features.",
+                "I'm focused on helping with transcription services. You can ask me about supported formats, model types, processing speeds, or how to use the platform effectively."
+            ];
+            
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+        // Event listeners
+        chatSend.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Close chat when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!chatContainer.contains(e.target) && !chatToggle.contains(e.target)) {
+                chatContainer.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

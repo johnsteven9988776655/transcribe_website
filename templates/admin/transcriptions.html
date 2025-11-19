@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription Management - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f3f4;
+            min-height: 100vh;
+        }
+
+        .admin-navbar {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            padding: 1rem 0;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .admin-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .filters-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filters-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.8rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .filter-select {
+            padding: 0.8rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            min-width: 150px;
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .transcriptions-table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .transcriptions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transcriptions-table th,
+        .transcriptions-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .transcriptions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
+            margin: 0 0.2rem;
+            transition: background 0.3s;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            color: white;
+        }
+
+        .actions-cell {
+            white-space: nowrap;
+            min-width: 200px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            gap: 0.5rem;
+        }
+
+        .pagination a {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #007bff;
+            text-decoration: none;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .pagination a:hover {
+            background: #e9ecef;
+        }
+
+        .pagination .current {
+            background: #007bff;
+            color: white;
+        }
+
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .flash-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Navigation Bar -->
+    <nav class="admin-navbar">
+        <div class="nav-container">
+            <div class="nav-brand">🔧 Admin Panel</div>
+            <div class="nav-links">
+                <span class="admin-badge">ADMIN</span>
+                <span>{{ current_user.username }}</span>
+                <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+                <a href="{{ url_for('admin_users') }}">👥 Users</a>
+                <a href="{{ url_for('admin_transcriptions') }}" class="active">📄 Transcriptions</a>
+                <a href="{{ url_for('admin_system_stats') }}">📊 System</a>
+                <a href="{{ url_for('dashboard') }}">🏠 My Dashboard</a>
+                <a href="{{ url_for('logout') }}">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">📄 Transcription Management</h1>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="filters-bar">
+            <form class="filters-form" method="GET">
+                <input type="text" name="search" class="filter-input" 
+                       placeholder="Search by filename or username..." 
+                       value="{{ search }}">
+                
+                <select name="status" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+                    <option value="processing" {{ 'selected' if status_filter == 'processing' }}>Processing</option>
+                    <option value="error" {{ 'selected' if status_filter == 'error' }}>Error</option>
+                    <option value="uploaded" {{ 'selected' if status_filter == 'uploaded' }}>Uploaded</option>
+                </select>
+                
+                <button type="submit" class="filter-btn">🔍 Filter</button>
+                {% if search or status_filter %}
+                    <a href="{{ url_for('admin_transcriptions') }}" class="action-btn btn-primary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Transcriptions Table -->
+        <div class="transcriptions-table-container">
+            {% if transcriptions.items %}
+                <table class="transcriptions-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>User</th>
+                            <th>Status</th>
+                            <th>Model</th>
+                            <th>Duration</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transcription in transcriptions.items %}
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">🎵</div>
+                                    <div class="file-details">
+                                        <div class="file-name">
+                                            {{ transcription.original_filename[:40] }}{% if transcription.original_filename|length > 40 %}...{% endif %}
+                                        </div>
+                                        {% if transcription.file_size %}
+                                            <div class="file-size">{{ "%.1f"|format(transcription.file_size / (1024*1024)) }} MB</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        {{ transcription.user.username[0].upper() }}
+                                    </div>
+                                    <span>{{ transcription.user.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ transcription.status }}">
+                                    {% if transcription.status == 'completed' %}
+                                        Completed
+                                    {% elif transcription.status == 'processing' %}
+                                        Processing
+                                    {% elif transcription.status == 'error' %}
+                                        Error
+                                    {% else %}
+                                        Uploaded
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>{{ transcription.model_size|title }}</td>
+                            <td>{{ transcription.duration or '-' }}</td>
+                            <td>{{ transcription.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                            <td class="actions-cell">
+                                {% if transcription.status == 'completed' and transcription.output_file %}
+                                    <a href="{{ url_for('download_file', filename=transcription.output_file) }}" 
+                                       class="action-btn btn-success">Download</a>
+                                {% endif %}
+                                {% if transcription.status == 'processing' %}
+                                    <a href="{{ url_for('results', job_id=transcription.job_id) }}" 
+                                       class="action-btn btn-primary">View</a>
+                                {% endif %}
+                                <a href="{{ url_for('admin_user_detail', user_id=transcription.user_id) }}" 
+                                   class="action-btn btn-primary">User</a>
+                                <a href="{{ url_for('admin_delete_transcription', transcription_id=transcription.id) }}" 
+                                   class="action-btn btn-danger"
+                                   onclick="return confirm('Are you sure you want to delete this transcription?')">
+                                   Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📄</div>
+                    <h3>No transcriptions found</h3>
+                    <p>{% if search or status_filter %}Try adjusting your search filters{% else %}No transcriptions have been created yet{% endif %}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        {% if transcriptions.pages > 1 %}
+        <div class="pagination">
+            {% if transcriptions.has_prev %}
+                <a href="{{ url_for('admin_transcriptions', page=transcriptions.prev_num, search=search, status=status_filter) }}">« Previous</a>
+            {% endif %}
+            
+            {% for page_num in transcriptions.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != transcriptions.page %}
+                        <a href="{{ url_for('admin_transcriptions', page=page_num, search=search, status=status_filter) }}">{{ page_num }}</a>
+                    {% else %}
+                        <a href="#" class="current">{{ page_num }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if transcriptions.has_next %}
+                <a href="{{ url_for('admin_transcriptions', page=transcriptions.next_num, search=search, status=status_filter) }}">Next »</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
