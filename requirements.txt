@@ -7,3 +7,4 @@ Jinja2
 itsdangerous
 click
 gunicorn
+openai-whisper
