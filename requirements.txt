@@ -8,3 +8,4 @@ itsdangerous
 click
 gunicorn
 openai-whisper
+pydub
