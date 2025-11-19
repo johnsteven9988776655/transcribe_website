@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Statistics - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f3f4;
+            min-height: 100vh;
+        }
+
+        .admin-navbar {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            padding: 1rem 0;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .admin-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .refresh-info {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            color: #1565c0;
+        }
+
+        .stats-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-low { background: #28a745; }
+        .progress-medium { background: #ffc107; }
+        .progress-high { background: #dc3545; }
+
+        .cpu-stat { color: #007bff; }
+        .memory-stat { color: #28a745; }
+        .disk-stat { color: #6f42c1; }
+        .user-stat { color: #fd7e14; }
+        .transcription-stat { color: #20c997; }
+
+        .system-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .warning-card {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .warning-title {
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .warning-text {
+            color: #856404;
+        }
+
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Navigation Bar -->
+    <nav class="admin-navbar">
+        <div class="nav-container">
+            <div class="nav-brand">🔧 Admin Panel</div>
+            <div class="nav-links">
+                <span class="admin-badge">ADMIN</span>
+                <span>{{ current_user.username }}</span>
+                <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+                <a href="{{ url_for('admin_users') }}">👥 Users</a>
+                <a href="{{ url_for('admin_transcriptions') }}">📄 Transcriptions</a>
+                <a href="{{ url_for('admin_system_stats') }}" class="active">📊 System</a>
+                <a href="{{ url_for('dashboard') }}">🏠 My Dashboard</a>
+                <a href="{{ url_for('logout') }}">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">📊 System Statistics</h1>
+            <a href="{{ url_for('admin_system_stats') }}" class="refresh-btn">🔄 Refresh Data</a>
+        </div>
+
+        <div class="refresh-info">
+            <strong>ℹ️ Real-time Monitoring:</strong> System data is collected when you load this page. Click "Refresh Data" for updated statistics.
+        </div>
+
+        {% if system_resources %}
+        <!-- System Resources -->
+        <div class="stats-section">
+            <h2 class="section-title">
+                <span>💻 System Resources</span>
+            </h2>
+            <div class="stats-grid">
+                <!-- CPU Usage -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">CPU Usage</span>
+                        <span class="stat-icon cpu-stat">🔄</span>
+                    </div>
+                    <div class="stat-value cpu-stat">{{ "%.1f"|format(system_resources.cpu_percent) }}%</div>
+                    <div class="stat-description">Current processor usage</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if system_resources.cpu_percent < 50 %}progress-low{% elif system_resources.cpu_percent < 80 %}progress-medium{% else %}progress-high{% endif %}" 
+                             style="width: {{ system_resources.cpu_percent }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Memory Usage -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Memory Usage</span>
+                        <span class="stat-icon memory-stat">🧠</span>
+                    </div>
+                    <div class="stat-value memory-stat">{{ "%.1f"|format(system_resources.memory_percent) }}%</div>
+                    <div class="stat-description">
+                        {{ "%.1f"|format(system_resources.memory_available / (1024**3)) }} GB available of 
+                        {{ "%.1f"|format(system_resources.memory_total / (1024**3)) }} GB
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if system_resources.memory_percent < 70 %}progress-low{% elif system_resources.memory_percent < 85 %}progress-medium{% else %}progress-high{% endif %}" 
+                             style="width: {{ system_resources.memory_percent }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Disk Usage -->
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Disk Usage</span>
+                        <span class="stat-icon disk-stat">💾</span>
+                    </div>
+                    <div class="stat-value disk-stat">{{ "%.1f"|format(system_resources.disk_percent) }}%</div>
+                    <div class="stat-description">
+                        {{ "%.1f"|format(system_resources.disk_free / (1024**3)) }} GB free of 
+                        {{ "%.1f"|format(system_resources.disk_total / (1024**3)) }} GB
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if system_resources.disk_percent < 70 %}progress-low{% elif system_resources.disk_percent < 90 %}progress-medium{% else %}progress-high{% endif %}" 
+                             style="width: {{ system_resources.disk_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="warning-card">
+            <div class="warning-title">⚠️ System Monitoring Unavailable</div>
+            <div class="warning-text">
+                Real-time system resource monitoring is not available. This may be due to platform limitations or missing dependencies.
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Database Statistics -->
+        <div class="stats-section">
+            <h2 class="section-title">
+                <span>🗄️ Database Statistics</span>
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Total Users</span>
+                        <span class="stat-icon user-stat">👥</span>
+                    </div>
+                    <div class="stat-value user-stat">{{ db_stats.total_users }}</div>
+                    <div class="stat-description">{{ db_stats.admin_users }} administrators</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Total Transcriptions</span>
+                        <span class="stat-icon transcription-stat">📄</span>
+                    </div>
+                    <div class="stat-value transcription-stat">{{ db_stats.total_transcriptions }}</div>
+                    <div class="stat-description">{{ db_stats.completed_transcriptions }} completed</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Processing</span>
+                        <span class="stat-icon">⏳</span>
+                    </div>
+                    <div class="stat-value" style="color: #ffc107;">{{ db_stats.processing_transcriptions }}</div>
+                    <div class="stat-description">Currently processing</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Errors</span>
+                        <span class="stat-icon">❌</span>
+                    </div>
+                    <div class="stat-value" style="color: #dc3545;">{{ db_stats.error_transcriptions }}</div>
+                    <div class="stat-description">Failed transcriptions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="stats-section">
+            <h2 class="section-title">
+                <span>🖥️ System Information</span>
+            </h2>
+            <div class="system-info-grid">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 1rem; color: #333;">Platform Details</h3>
+                    <div class="info-item">
+                        <span class="info-label">Operating System</span>
+                        <span class="info-value">{{ system_info.platform }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">OS Version</span>
+                        <span class="info-value">{{ system_info.platform_version[:50] }}{% if system_info.platform_version|length > 50 %}...{% endif %}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Architecture</span>
+                        <span class="info-value">{{ system_info.architecture }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Processor</span>
+                        <span class="info-value">{{ system_info.processor[:30] }}{% if system_info.processor|length > 30 %}...{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3 style="margin-bottom: 1rem; color: #333;">Application Details</h3>
+                    <div class="info-item">
+                        <span class="info-label">Python Version</span>
+                        <span class="info-value">{{ system_info.python_version }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Flask App</span>
+                        <span class="info-value">Running</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Database</span>
+                        <span class="info-value">SQLite</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">AI Model</span>
+                        <span class="info-value">OpenAI Whisper</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Status -->
+        {% if system_resources and (system_resources.cpu_percent > 80 or system_resources.memory_percent > 85 or system_resources.disk_percent > 90) %}
+        <div class="warning-card">
+            <div class="warning-title">⚠️ System Health Warnings</div>
+            <div class="warning-text">
+                {% if system_resources.cpu_percent > 80 %}
+                • High CPU usage ({{ "%.1f"|format(system_resources.cpu_percent) }}%) - Consider monitoring active processes<br>
+                {% endif %}
+                {% if system_resources.memory_percent > 85 %}
+                • High memory usage ({{ "%.1f"|format(system_resources.memory_percent) }}%) - System may slow down<br>
+                {% endif %}
+                {% if system_resources.disk_percent > 90 %}
+                • Low disk space ({{ "%.1f"|format(system_resources.disk_percent) }}% used) - Consider cleaning up old transcription files
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Audio Transcription Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chat-title {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .chat-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .chat-container {
+            background: white;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: #f8f9fa;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.ai {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        .chat-input-container {
+            padding: 2rem;
+            border-top: 1px solid #e9ecef;
+            background: white;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .chat-send {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+            min-width: 100px;
+        }
+
+        .chat-send:hover {
+            transform: translateY(-2px);
+        }
+
+        .chat-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-style: italic;
+            padding: 0 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0 2rem;
+        }
+
+        .suggestion-chip {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+            border: none;
+        }
+
+        .suggestion-chip:hover {
+            background: #bbdefb;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border: 1px solid #c8e6c9;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-message h3 {
+            color: #2e7d32;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-message ul {
+            color: #388e3c;
+            margin-left: 1.5rem;
+        }
+
+        .welcome-message li {
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem 10px;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            .chat-input-container {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .chat-send {
+                align-self: stretch;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .suggestions {
+                padding: 0 1rem;
+            }
+        }
+
+        .flash-messages {
+            margin-bottom: 1rem;
+        }
+
+        .flash-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .flash-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand"> Audio Transcription</div>
+            <div class="nav-links">
+                <span>Hello {{ current_user.username }}</span>
+                <a href="{{ url_for('dashboard') }}"> Dashboard</a>
+                <a href="{{ url_for('upload_page') }}"> Upload</a>
+                <a href="{{ url_for('chat_page') }}" class="active"> AI Chat</a>
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin_dashboard') }}"> Admin</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}"> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <h1 class="chat-title"> Johaks AI Assistant</h1>
+            <p class="chat-subtitle">Ask me anything about transcriptions, vocabulary, or general questions!</p>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <h3>👋 Welcome {{ current_user.username }}!</h3>
+                    <p>I'm your AI assistant. I can help you with:</p>
+                    <ul>
+                        <li><strong>Vocabulary & Word Meanings:</strong> Ask me to define any word or explain concepts</li>
+                        <li><strong>Audio Transcription:</strong> Learn about our transcription process and features</li>
+                        <li><strong>File Formats:</strong> Understand supported audio formats and requirements</li>
+                        <li><strong>General Questions:</strong> Get help with various topics and information</li>
+                        <li><strong>Language Learning:</strong> Practice vocabulary and language skills</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><em>Try asking me something like "What does 'serendipity' mean?" or "How do I transcribe audio?"</em></p>
+                </div>
+            </div>
+            
+            <div class="suggestions" id="suggestions">
+                <button class="suggestion-chip" onclick="sendSuggestion('What does serendipity mean?')">What does "serendipity" mean?</button>
+                <button class="suggestion-chip" onclick="sendSuggestion('How do I transcribe audio?')">How do I transcribe audio?</button>
+                <button class="suggestion-chip" onclick="sendSuggestion('What file formats are supported?')">What file formats are supported?</button>
+                <button class="suggestion-chip" onclick="sendSuggestion('Explain artificial intelligence')">Explain artificial intelligence</button>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <span>AI is thinking</span>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <textarea class="chat-input" id="chatInput" placeholder="Ask me anything... (e.g., 'What does ubiquitous mean?' or 'How does transcription work?')" rows="1"></textarea>
+                <button class="chat-send" id="chatSend">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const suggestions = document.getElementById('suggestions');
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message function
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Disable send button
+            chatSend.disabled = true;
+            
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Hide suggestions after first message
+            if (suggestions.children.length > 0) {
+                suggestions.style.display = 'none';
+            }
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate AI response delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = getAIResponse(message);
+                addMessage(response, 'ai');
+                chatSend.disabled = false;
+            }, 1500 + Math.random() * 2000);
+        }
+
+        // Send suggestion
+        function sendSuggestion(message) {
+            chatInput.value = message;
+            sendMessage();
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const textDiv = document.createElement('div');
+            textDiv.innerHTML = text.replace(/\n/g, '<br>');
+            messageDiv.appendChild(textDiv);
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            messageDiv.appendChild(timeDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show/hide typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Enhanced AI response system
+        function getAIResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Vocabulary and word definitions
+            if (lowerMessage.includes('what does') && lowerMessage.includes('mean')) {
+                const word = extractWord(message);
+                return getWordDefinition(word);
+            }
+            
+            if (lowerMessage.includes('define') || lowerMessage.includes('definition')) {
+                const word = extractWord(message);
+                return getWordDefinition(word);
+            }
+            
+            if (lowerMessage.includes('meaning of')) {
+                const word = extractWord(message);
+                return getWordDefinition(word);
+            }
+            
+            // Transcription-related responses
+            if (lowerMessage.includes('transcription') || lowerMessage.includes('transcribe')) {
+                return " Audio Transcription Guide:\n\nOur service converts audio files to text using advanced AI (Whisper). Here's how it works:\n\n1. Upload your audio file (drag & drop or browse)\n2. Choose a model size (Tiny for speed, Large for accuracy)\n3. Wait for processing (we'll show progress)\n4. Download your transcription as a text file\n\nThe AI analyzes audio patterns and converts speech to accurate text. Perfect for interviews, lectures, meetings, and more!";
+            }
+            
+            if (lowerMessage.includes('file format') || lowerMessage.includes('supported') || lowerMessage.includes('upload')) {
+                return "📁 Supported Audio Formats:\n\n Audio Files: MP3, WAV, M4A, FLAC, OGG\n Video Files: MP4, AVI (we extract audio)\n Maximum Size: 500MB per file\n Duration: No limit (longer files processed in chunks)\n\nTips:\n• Higher quality audio = better transcription\n• Clear speech works best\n• Background noise may affect accuracy\n• Multiple speakers are supported";
+            }
+            
+            if (lowerMessage.includes('model') || lowerMessage.includes('accuracy') || lowerMessage.includes('quality')) {
+                return " AI Model Options:\n\nTiny - Lightning fast, good for clear audio\nBase - Balanced speed and accuracy (recommended)\nSmall - Better accuracy, moderate speed\n**Medium - High accuracy, longer processing\nLarge - Maximum accuracy, slowest processing\n\n**Choose based on your needs:\n• Quick drafts → Tiny/Base\n• Important documents → Medium/Large\n• Multiple languages → Large model works best";
+            }
+            
+            // Educational content
+            if (lowerMessage.includes('artificial intelligence') || lowerMessage.includes('ai')) {
+                return " Artificial Intelligence (AI):\n\nAI is technology that enables machines to perform tasks that typically require human intelligence, such as:\n\n• Learning from data and experience\n• Reasoning and problem-solving\n• Understanding language and speech\n• Recognizing patterns and images\n• Making decisions and predictions\n\nOur transcription service uses Machine Learning, a subset of AI, to understand and convert speech to text with remarkable accuracy!";
+            }
+            
+            if (lowerMessage.includes('machine learning')) {
+                return " Machine Learning:\n\nMachine Learning is a method where computers learn patterns from data without being explicitly programmed for every scenario.\n\nHow it works:\n1. Training - AI studies thousands of audio samples\n2. Pattern Recognition - Learns to identify speech patterns\n3. Prediction - Applies learning to new audio files\n4. Improvement - Gets better with more data\n\nOur Whisper AI was trained on millions of hours of diverse audio to achieve high accuracy!";
+            }
+            
+            // Language and vocabulary help
+            if (lowerMessage.includes('synonym') || lowerMessage.includes('similar word')) {
+                return " Finding Synonyms:\n\nSynonyms are words with similar meanings. To find them:\n\n• Think about the context and meaning\n• Consider intensity levels (big vs enormous)\n• Use a thesaurus for more options\n• Practice with word association games\n\nExample: 'Happy' synonyms: joyful, delighted, cheerful, elated, content\n\nWhat specific word would you like synonyms for?";
+            }
+            
+            // General help and greetings
+            if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+                return ` Hello there! I'm your AI assistant, ready to help with:\n\n🔤 **Vocabulary** - Word definitions and meanings\n🎵 **Transcriptions** - How our service works\n📚 **Learning** - Educational topics and concepts\n❓ **Questions** - General information and help\n\nWhat would you like to explore today?`;
+            }
+            
+            if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
+                return " I can help you with:\n\n Vocabulary & Language:\n• Define words and explain meanings\n• Find synonyms and antonyms\n• Explain grammar concepts\n• Language learning tips\n\n Transcription Service:\n• How to upload and transcribe files\n• Model selection guidance\n• Troubleshooting issues\n\n General Knowledge:\n• Explain concepts and topics\n• Answer questions\n• Provide information\n\nJust ask me anything!";
+            }
+            
+            // Error handling and troubleshooting
+            if (lowerMessage.includes('error') || lowerMessage.includes('problem') || lowerMessage.includes('issue')) {
+                return " Troubleshooting Guide:\n\nUpload Issues:\n• Check file format (MP3, WAV, MP4, etc.)\n• Ensure file size < 500MB\n• Try refreshing the page\n\nProcessing Problems:\n• Wait for current jobs to complete\n• Check internet connection\n• Try a smaller audio file first\n\n**Audio Quality Issues:\n• Use clear, high-quality recordings\n• Minimize background noise\n• Ensure good microphone placement\n\nStill having trouble? Try a different file or contact support!";
+            }
+            
+            // Thank you responses
+            if (lowerMessage.includes('thank') || lowerMessage.includes('thanks')) {
+                return " You're very welcome! I'm always here to help with vocabulary, transcriptions, or any questions you have. Feel free to ask me anything else!";
+            }
+            
+            // Default response with suggestions
+            const defaultResponses = [
+                " I'd love to help! I specialize in:\n\n• **Vocabulary** - Ask me to define any word\n• **Transcription** - Learn about our audio-to-text service\n• **General Knowledge** - Explain concepts and topics\n\nTry asking: 'What does [word] mean?' or 'How does transcription work?'",
+                
+                " That's an interesting question! I'm here to help with:\n\n• **Word definitions** and meanings\n• **Audio transcription** guidance\n• **Educational** topics and concepts\n\nWhat specific topic would you like to explore?",
+                
+                " I'm designed to assist with vocabulary and transcription questions. You could ask me:\n\n• 'Define [any word]'\n• 'What file formats do you support?'\n• 'Explain [any concept]'\n• 'How accurate is the transcription?'\n\nWhat interests you most?"
+            ];
+            
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+
+        // Extract word from various question formats
+        function extractWord(message) {
+            // Remove common question words and punctuation
+            let cleaned = message.toLowerCase()
+                .replace(/what does|what's the meaning of|define|meaning of|what is|explain|tell me about/g, '')
+                .replace(/[^\w\s]/g, '')
+                .trim();
+            
+            // Get the first significant word (skip common words)
+            const words = cleaned.split(' ').filter(word => 
+                word.length > 1 && 
+                !['the', 'and', 'but', 'for', 'nor', 'yet', 'so', 'me', 'you', 'it', 'is', 'are', 'was', 'were', 'mean', 'means'].includes(word)
+            );
+            
+            return words[0] || 'word';
+        }
+
+        // Get word definition (comprehensive dictionary)
+        function getWordDefinition(word) {
+            const definitions = {
+                // Common vocabulary words
+                'serendipity': ' Serendipity means finding something good or useful while looking for something else entirely. It\'s a pleasant surprise or happy accident!\n\nExample: "Finding that amazing coffee shop was pure serendipity - I was just looking for a parking spot!"*',
+                
+                'ubiquitous': 'Ubiquitous means present, appearing, or found everywhere; omnipresent.\n\nExample: "Smartphones have become ubiquitous in modern society - you see them everywhere you go!"*',
+                
+                'ephemeral': 'Ephemeral means lasting for a very short time; transitory or fleeting.\n\nExample: "The cherry blossoms are ephemeral - they bloom beautifully but only for a few weeks each year."*',
+                
+                'eloquent': 'Eloquent means fluent or persuasive in speaking or writing; expressing ideas clearly and effectively.\n\nExample: "Her eloquent speech moved the entire audience to tears."*',
+                
+                'resilient': 'Resilient means able to withstand or recover quickly from difficult conditions; tough and adaptable.\n\nExample: "Children are remarkably resilient and often bounce back from setbacks faster than adults."*',
+                
+                'nostalgia': 'Nostalgia is a sentimental longing for the past, typically for a period or place with happy personal associations.\n\nExample: "Looking through old photo albums filled her with nostalgia for her childhood summers."*',
+                
+                'procrastination': 'Procrastination is the action of delaying or postponing something, especially out of habitual carelessness or laziness.\n\nExample: "His procrastination on the project meant he had to work all night to meet the deadline."*',
+                
+                'ambiguous': 'Ambiguous means having more than one possible meaning; unclear or open to interpretation.\n\nExample: "The contract\'s ambiguous wording led to confusion about who was responsible for what."*',
+                
+                // Additional comprehensive vocabulary
+                'paradigm': 'Paradigm means a typical example or pattern of something; a model or framework for understanding.\n\nExample: "The internet created a new paradigm for how we communicate and share information."*',
+                
+                'inevitable': 'Inevitable means certain to happen; unavoidable.\n\nExample: "With dark clouds gathering, rain seemed inevitable."*',
+                
+                'profound': 'Profound means very great or intense; having deep insight or understanding.\n\nExample: "The loss of her mentor had a profound impact on her career choices."*',
+                
+                'meticulous': 'Meticulous means showing great attention to detail; very careful and precise.\n\nExample: "The surgeon was meticulous in her preparation for the complex operation."*',
+                
+                'enigma': 'Enigma means a person or thing that is mysterious, puzzling, or difficult to understand.\n\nExample: "The ancient manuscript remains an enigma to historians and linguists."*',
+                
+                'catalyst': 'Catalyst means a person or thing that precipitates an event or causes change.\n\nExample: "The new manager was the catalyst for improving team productivity."*',
+                
+                'benevolent': '💝 **Benevolent** means well-meaning and kindly; showing goodwill.\n\nExample: "The benevolent donor funded scholarships for underprivileged students."*',
+                
+                'audacious': '🚀 **Audacious** means showing willingness to take surprisingly bold risks; impudent.\n\nExample: "Her audacious plan to climb Everest without oxygen surprised everyone."*',
+                
+                'lucid': '💡 **Lucid** means expressed clearly; easy to understand; mentally clear.\n\nExample: "Despite his age, his explanation was remarkably lucid and detailed."*',
+                
+                'vindicate': '✅ **Vindicate** means to clear someone of blame or suspicion; to show to be right.\n\nExample: "The DNA evidence vindicated the wrongly accused man after 20 years."*',
+                
+                'sophisticated': '🎩 **Sophisticated** means having great knowledge or experience; refined and cultured.\n\nExample: "The restaurant\'s sophisticated menu featured dishes from around the world."*',
+                
+                'pragmatic': '🎯 **Pragmatic** means dealing with things sensibly and realistically; practical.\n\nExample: "Her pragmatic approach to budgeting helped the family save money."*',
+                
+                'adversity': '⛈️ **Adversity** means difficulties or misfortune; hardship.\n\n*Example: "She showed great strength in overcoming adversity during her recovery."*',
+                
+                'innovation': '💡 **Innovation** means a new method, idea, or product; the act of innovating.\n\nExample: "The company\'s innovation in renewable energy revolutionized the industry."*',
+                
+                'collaborate': '🤝 **Collaborate** means to work jointly on an activity or project.\n\n*Example: "The two companies decided to collaborate on developing new software."*',
+                
+                'perspective': '👁️ **Perspective** means a particular attitude toward or way of regarding something; a point of view.\n\nExample: "Traveling abroad gave her a new perspective on her own culture."*',
+                
+                'empathy': '❤️ **Empathy** means the ability to understand and share the feelings of another person.\n\nExample: "Her empathy for others made her an excellent counselor."*',
+                
+                'integrity': '🏛️ **Integrity** means the quality of being honest and having strong moral principles.\n\nExample: "His integrity was never questioned, even in difficult situations."*',
+                
+                'perseverance': '🏃 **Perseverance** means persistence in doing something despite difficulty or delay in achieving success.\n\nExample: "Through perseverance, she finally mastered the difficult piano piece."*',
+                
+                'optimism': '☀️ **Optimism** means hopefulness and confidence about the future or success of something.\n\nExample: "Her optimism helped the team stay motivated during challenging times."*',
+                
+                'hypothesis': '🔬 **Hypothesis** means a supposition or proposed explanation made on limited evidence as a starting point for investigation.\n\nExample: "The scientist tested her hypothesis about plant growth with controlled experiments."*',
+                
+                'analysis': '📊 **Analysis** means detailed examination of elements or structure of something.\n\nExample: "The market analysis revealed interesting trends in consumer behavior."*',
+                
+                'synthesis': '🧩 **Synthesis** means the combination of ideas to form a theory or system.\n\nExample: "Her essay was a brilliant synthesis of different philosophical perspectives."*',
+                
+                'democracy': '🗳️ **Democracy** means a system of government by the whole population through elected representatives.\n\nExample: "The peaceful transition of power demonstrated the strength of their democracy."*',
+                
+                'philosophy': '🤔 **Philosophy** means the study of fundamental nature of knowledge, reality, and existence.\n\nExample: "Her philosophy of life emphasized kindness and continuous learning."*',
+                
+                'psychology': '🧠 **Psychology** means the scientific study of the human mind and behavior.\n\nExample: "He studied psychology to better understand human motivation and learning."*',
+                
+                'technology': '💻 **Technology** means the application of scientific knowledge for practical purposes.\n\nExample: "Modern technology has transformed how we communicate and work."*',
+                
+                'environment': '🌍 **Environment** means the surroundings or conditions in which a person, animal, or plant lives.\n\nExample: "Protecting the environment is crucial for future generations."*',
+                
+                'education': '📚 **Education** means the process of receiving or giving systematic instruction.\n\nExample: "Quality education is the foundation of personal and societal development."*',
+                
+                'communication': '💬 **Communication** means the imparting or exchanging of information or ideas.\n\nExample: "Effective communication is essential for successful teamwork."*',
+                
+                'creativity': '🎨 **Creativity** means the use of imagination or original ideas to create something.\n\nExample: "Her creativity in solving problems impressed her colleagues."*',
+                
+                'responsibility': '📋 **Responsibility** means the state of being accountable for something; a duty or obligation.\n\nExample: "Taking responsibility for mistakes shows maturity and integrity."*',
+                
+                'opportunity': '🚪 **Opportunity** means a set of circumstances that makes it possible to do something.\n\nExample: "The internship provided an excellent opportunity to gain work experience."*',
+                
+                'challenge': '🏔️ **Challenge** means a call to take part in a contest; a demanding or stimulating situation.\n\nExample: "Learning a new language was a challenge she eagerly accepted."*',
+                
+                'success': '🏆 **Success** means the accomplishment of an aim or purpose; favorable outcome.\n\nExample: "Her success in business came from hard work and smart decisions."*',
+                
+                'failure': '📉 **Failure** means lack of success; the state of not meeting a desirable outcome.\n\nExample: "He learned valuable lessons from his failure and tried again with better preparation."*',
+                
+                'growth': 'Growth means the process of increasing in size, amount, or degree; development.\n\nExample: "Personal growth often comes from stepping outside your comfort zone."*',
+                
+                'development': 'Development means the process of developing or being developed; growth or advancement.\n\nExample: "The development of new skills requires practice and dedication."*',
+                
+                'improvement': 'Improvement means the action of making or becoming better.\n\nExample: "The improvement in her writing skills was evident after just one semester."*',
+                
+                'knowledge': 'Knowledge means facts, information, and skills acquired through experience or education.\n\nExample: "His knowledge of history helped him understand current political events."*',
+                
+                'wisdom': 'Wisdom means the quality of having experience, knowledge, and good judgment.\n\nExample: "With age and experience came the wisdom to make better life choices."*',
+                
+                'understanding': 'Understanding means the ability to comprehend; sympathetic awareness.\n\nExample: "Her understanding of the problem led to an effective solution."*',
+                
+                'patience': 'Patience means the capacity to accept delay, trouble, or suffering without getting angry.\n\nExample: "Teaching young children requires enormous patience and kindness."*',
+                
+                'kindness': 'Kindness means the quality of being friendly, generous, or considerate.\n\nExample: "Small acts of kindness can make a significant difference in someone\'s day."*',
+                
+                'courage': 'Courage means the ability to do something that frightens one; bravery.\n\nExample: "It took courage for her to speak up about the important issue."*',
+                
+                'confidence': 'Confidence means the feeling of self-assurance arising from appreciation of one\'s abilities.\n\nExample: "Her confidence in public speaking improved with practice and preparation."*',
+                
+                'determination': 'Determination means firmness of purpose; resoluteness.\n\nExample: "His determination to finish the marathon kept him going despite the pain."*',
+                
+                'motivation': 'Motivation means the reason for acting or behaving in a particular way; enthusiasm.\n\nExample: "Her motivation to help others led her to volunteer at the local shelter."*',
+                
+                'inspiration': 'Inspiration means the process of being mentally stimulated to do or feel something creative.\n\nExample: "The teacher\'s passion for science was an inspiration to her students."*',
+                
+                'achievement': 'Achievement means a thing done successfully, especially with effort, skill, or courage.\n\nExample: "Graduating from medical school was her greatest achievement to date."*'
+            };
+            
+            const lowerWord = word.toLowerCase();
+            
+            if (definitions[lowerWord]) {
+                return definitions[lowerWord];
+            }
+            
+            // Generate a helpful response for unknown words with suggestions
+            return `📖 **${word.charAt(0).toUpperCase() + word.slice(1)}:**\n\nI don't have a specific definition for "${word}" in my vocabulary database yet, but I can help you with many other words!\n\n**Try asking about these popular words:**\n• Serendipity, Ubiquitous, Eloquent\n• Paradigm, Profound, Meticulous\n• Innovation, Perseverance, Empathy\n• Courage, Wisdom, Determination\n\n**Or ask me about:**\n• Transcription features and processes\n• General topics and concepts\n• Technology and education topics\n\nWhat other word would you like me to define?`;
+        }
+
+        // Event listeners
+        chatSend.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Focus on input when page loads
+        window.addEventListener('load', () => {
+            chatInput.focus();
+        });
+    </script>
+</body>
+</html>
