@@ -8,4 +8,5 @@ itsdangerous
 click
 gunicorn
 openai-whisper
-pydub
+pydub==0.24.1
+torch==2.1.2
