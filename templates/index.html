@@ -216,7 +216,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 Johaks audio transcriptions.</h1>
+            <h1> Johaks audio transcriptions.</h1>
             <p>Upload your audio file and get an accurate transcription</p>
         </div>
 
@@ -252,6 +252,15 @@
                 <div class="model-info">
                     Higher quality models take longer to process but provide more accurate transcriptions.
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Transcription Language</label>
+                <select id="language" name="language">
+                    <option value="luganda" selected>Luganda</option>
+                    <option value="auto">Auto-detect</option>
+                    <!-- Add more languages as needed -->
+                </select>
             </div>
 
             <button type="submit" class="upload-btn" id="upload-btn">
@@ -351,6 +360,7 @@
             const formData = new FormData();
             formData.append('file', selectedFileObj);
             formData.append('model_size', document.getElementById('model-select').value);
+            formData.append('language', document.getElementById('language').value);
 
             try {
                 const response = await fetch('/upload', {

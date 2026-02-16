@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block styles %}
+<style>
+.profile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.profile-card { width: 100%; max-width: 520px; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden; }
+.profile-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 24px; text-align: center; }
+.profile-avatar { width: 84px; height: 84px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.5); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+.profile-body { padding: 24px; background: #fafafa; }
+.profile-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #e5e7eb; }
+.profile-row:last-child { border-bottom: none; }
+.profile-label { color: #6b7280; font-weight: 600; }
+.profile-value { color: #111827; font-weight: 700; }
+.profile-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 20px; background: #fff; }
+.btn { padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; }
+.btn-primary { background: #667eea; color: #fff; }
+.btn-secondary { background: #f3f4f6; color: #111827; }
+/* Dark theme compatibility */
+body.dark .profile-card { background: #1f2937; }
+body.dark .profile-body { background: #111827; }
+body.dark .profile-row { border-bottom-color: #374151; }
+body.dark .profile-label { color: #9ca3af; }
+body.dark .profile-value { color: #e5e7eb; }
+body.dark .btn-secondary { background: #374151; color: #e5e7eb; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-overlay">
+  <div class="profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="profile-header">
+      <div class="profile-avatar">{{ current_user.username[0].upper() }}</div>
+      <h2 id="profileTitle">My Profile</h2>
+      {% if current_user.is_admin %}<div style="margin-top:6px; font-weight:700;">ADMIN</div>{% endif %}
+    </div>
+    <div class="profile-body">
+      <div class="profile-row">
+        <div class="profile-label">Username</div>
+        <div class="profile-value">{{ current_user.username }}</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-label">Email</div>
+        <div class="profile-value">{{ current_user.email }}</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-label">Joined</div>
+        <div class="profile-value">{{ current_user.created_at.strftime('%b %d, %Y') }}</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-label">Transcriptions</div>
+        <div class="profile-value">{{ current_user.transcriptions|length }}</div>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Close</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

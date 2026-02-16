@@ -157,7 +157,7 @@
             
             <div class="form-group">
                 {{ form.username.label(class="form-label") }}
-                {{ form.username(class="form-control", placeholder="Enter your username") }}
+                {{ form.username(class="form-control", placeholder="Enter your username or Email") }}
                 {% if form.username.errors %}
                     <div class="error-text">
                         {% for error in form.username.errors %}

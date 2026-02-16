@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}System Stats - Admin{% endblock %}
+
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -257,12 +262,12 @@
             <div class="nav-links">
                 <span class="admin-badge">ADMIN</span>
                 <span>{{ current_user.username }}</span>
-                <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+                <a href="{{ url_for('admin_dashboard') }}"> Dashboard</a>
                 <a href="{{ url_for('admin_users') }}">👥 Users</a>
-                <a href="{{ url_for('admin_transcriptions') }}">📄 Transcriptions</a>
-                <a href="{{ url_for('admin_system_stats') }}" class="active">📊 System</a>
-                <a href="{{ url_for('dashboard') }}">🏠 My Dashboard</a>
-                <a href="{{ url_for('logout') }}">🚪 Logout</a>
+                <a href="{{ url_for('admin_transcriptions') }}"> Transcriptions</a>
+                <a href="{{ url_for('admin_system_stats') }}" class="active"> System</a>
+                <a href="{{ url_for('dashboard') }}"> My Dashboard</a>
+                <a href="{{ url_for('logout') }}"> Logout</a>
             </div>
         </div>
     </nav>
@@ -270,7 +275,7 @@
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1 class="page-title">📊 System Statistics</h1>
+            <h1 class="page-title"> System Statistics</h1>
             <a href="{{ url_for('admin_system_stats') }}" class="refresh-btn">🔄 Refresh Data</a>
         </div>
 
@@ -282,14 +287,14 @@
         <!-- System Resources -->
         <div class="stats-section">
             <h2 class="section-title">
-                <span>💻 System Resources</span>
+                <span> System Resources</span>
             </h2>
             <div class="stats-grid">
                 <!-- CPU Usage -->
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">CPU Usage</span>
-                        <span class="stat-icon cpu-stat">🔄</span>
+                        <span class="stat-icon cpu-stat"></span>
                     </div>
                     <div class="stat-value cpu-stat">{{ "%.1f"|format(system_resources.cpu_percent) }}%</div>
                     <div class="stat-description">Current processor usage</div>
@@ -303,7 +308,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Memory Usage</span>
-                        <span class="stat-icon memory-stat">🧠</span>
+                        <span class="stat-icon memory-stat"></span>
                     </div>
                     <div class="stat-value memory-stat">{{ "%.1f"|format(system_resources.memory_percent) }}%</div>
                     <div class="stat-description">
@@ -320,7 +325,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Disk Usage</span>
-                        <span class="stat-icon disk-stat">💾</span>
+                        <span class="stat-icon disk-stat"></span>
                     </div>
                     <div class="stat-value disk-stat">{{ "%.1f"|format(system_resources.disk_percent) }}%</div>
                     <div class="stat-description">
@@ -361,7 +366,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Total Transcriptions</span>
-                        <span class="stat-icon transcription-stat">📄</span>
+                        <span class="stat-icon transcription-stat"></span>
                     </div>
                     <div class="stat-value transcription-stat">{{ db_stats.total_transcriptions }}</div>
                     <div class="stat-description">{{ db_stats.completed_transcriptions }} completed</div>
@@ -370,7 +375,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">Processing</span>
-                        <span class="stat-icon">⏳</span>
+                        <span class="stat-icon"></span>
                     </div>
                     <div class="stat-value" style="color: #ffc107;">{{ db_stats.processing_transcriptions }}</div>
                     <div class="stat-description">Currently processing</div>
@@ -390,7 +395,7 @@
         <!-- System Information -->
         <div class="stats-section">
             <h2 class="section-title">
-                <span>🖥️ System Information</span>
+                <span> System Information</span>
             </h2>
             <div class="system-info-grid">
                 <div class="info-card">
@@ -455,3 +460,4 @@
     </div>
 </body>
 </html>
+{% endblock %}

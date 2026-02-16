@@ -477,17 +477,37 @@
                 height: 400px;
             }
         }
+
+        .menu-container { position: relative; }
+        .menu-trigger { background: transparent; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0.3rem 0.6rem; border-radius: 6px; }
+        .menu-trigger:hover { background: rgba(255,255,255,0.1); }
+        .menu-dropdown { position: absolute; right: 0; top: 120%; background: #fff; color: #333; border: 1px solid #e9ecef; border-radius: 8px; min-width: 180px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); display: none; z-index: 10000; padding: 6px; }
+        .menu-dropdown.active { display: block; }
+        .menu-item { display: block; width: 100%; padding: 0.65rem 0.9rem; text-decoration: none; color: #000 !important; font-weight: 600; background: transparent; border: none; text-align: left; border-radius: 6px; cursor: pointer; }
+        .menu-item:hover { background: #f0f0f0; }
+        .menu-divider { height: 1px; background: #e9ecef; margin: 0.3rem 0; }
+
+        /* Ensure visibility in dark theme */
+        body.dark .menu-dropdown { background: #1e1e1e; color: #eaeaea; border-color: #333; }
+        body.dark .menu-item { color: #000 !important; }
+        body.dark .menu-item:hover { background: #2a2a2a; }
     </style>
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-brand"> Audio transcription</div>
+            <div class="nav-brand"> Parix audio transcription</div>
             <div class="nav-links">
                 <span>Hello  {{ current_user.username }}</span>
                 <a href="{{ url_for('upload_page') }}"> Upload</a>
-                <a href="{{ url_for('logout') }}"> Logout</a>
+                <div class="menu-container">
+                    <button id="menuTrigger" class="menu-trigger" aria-label="Menu">⋮</button>
+                    <div id="menuDropdown" class="menu-dropdown" role="menu">
+                        <a class="menu-item" href="{{ url_for('profile') }}"> Profile</a>
+                        <a class="menu-item" href="{{ url_for('logout') }}"> Logout</a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -780,6 +800,19 @@
         document.addEventListener('click', (e) => {
             if (!chatContainer.contains(e.target) && !chatToggle.contains(e.target)) {
                 chatContainer.classList.remove('active');
+            }
+        });
+
+        // Three-dots menu toggle
+        const menuTrigger = document.getElementById('menuTrigger');
+        const menuDropdown = document.getElementById('menuDropdown');
+        menuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', (e) => {
+            if (!menuDropdown.contains(e.target) && !menuTrigger.contains(e.target)) {
+                menuDropdown.classList.remove('active');
             }
         });
     </script>

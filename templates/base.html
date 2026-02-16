@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Transcription Service{% endblock %}</title>
+    {% block styles %}{% endblock %}
+    <style>
+        body { min-height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; }
+        .main { flex: 1; }
+        .footer { background: #2c3e50; color: #fff; text-align: center; padding: 12px 16px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 16px; }
+    </style>
+</head>
+<body>
+    <div class="main">
+        {% block content %}{% endblock %}
+    </div>
+    <footer class="footer">
+        <p>&copy; <span id="currentYear"></span> JohaksTechSolns</p>
+    </footer>
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

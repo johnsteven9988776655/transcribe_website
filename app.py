@@ -53,6 +53,10 @@ AudioSegment.ffmpeg = ffmpeg_path
 AudioSegment.ffprobe = ffprobe_path
 os.environ["PATH"] += os.pathsep + r"C:\ffmpeg-8.0-essentials_build\bin"
 
+# Local Whisper models directory
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+os.makedirs(MODEL_DIR, exist_ok=True)
+
 # Database Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -101,13 +105,21 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Sign In')
 
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset Password')
+
 def allowed_file(filename):
     """Check if file extension is allowed"""
     ALLOWED_EXTENSIONS = {'mp3', 'wav', 'mp4', 'avi', 'm4a', 'flac', 'ogg'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Add a watchdog timeout (in minutes) for long-running jobs
+MAX_TRANSCRIBE_MINUTES = 10
+
 def transcribe_audio_file(file_path, job_id, model_size="base", chunk_minutes=8):
-    """Background function to transcribe audio file"""
+    """Background function to transcribe audio file with improved preprocessing"""
     try:
         # Use application context for all database operations
         with app.app_context():
@@ -120,13 +132,28 @@ def transcribe_audio_file(file_path, job_id, model_size="base", chunk_minutes=8)
         transcription_status[job_id]['status'] = 'processing'
         transcription_status[job_id]['progress'] = 'Loading Whisper model...'
         
-        # Load Whisper model
-        model = whisper.load_model(model_size)
+        try:
+            # Load normally (uses network on first run, then local cache)
+            model = whisper.load_model(model_size)
+        except Exception as e:
+            # Surface clearer error and stop early
+            transcription_status[job_id]['status'] = 'error'
+            transcription_status[job_id]['progress'] = f'Error loading model: {e}. Ensure internet access for first-time download.'
+            with app.app_context():
+                t = Transcription.query.filter_by(job_id=job_id).first()
+                if t:
+                    t.status = 'error'
+                    db.session.commit()
+            return
         
         transcription_status[job_id]['progress'] = 'Converting audio format...'
         
         # Convert to WAV for processing
         audio = AudioSegment.from_file(file_path)
+        # Audio preprocessing: mono, 16kHz, normalized
+        audio = audio.set_channels(1)
+        audio = audio.set_frame_rate(16000)
+        audio = audio.normalize()
         temp_wav = os.path.join(tempfile.gettempdir(), f"temp_{job_id}.wav")
         audio.export(temp_wav, format="wav")
         
@@ -146,11 +173,23 @@ def transcribe_audio_file(file_path, job_id, model_size="base", chunk_minutes=8)
         # Determine if we need chunking
         chunk_seconds = chunk_minutes * 60
         
+        # Watchdog start time
+        start_ts = time.time()
+
+        def transcribe_path(path):
+            # Force English decoding for stronger phonetic transcription
+            return model.transcribe(
+                path,
+                task='transcribe',
+                language='en',
+                temperature=0.0,
+            )
+
         if duration_seconds <= chunk_seconds:
             # Process entire file
             transcription_status[job_id]['progress'] = 'Transcribing audio...'
-            result = model.transcribe(temp_wav)
-            transcribed_text = result["text"]
+            result = transcribe_path(temp_wav)
+            transcribed_text = result.get("text", "")
         else:
             # Process in chunks
             num_chunks = math.ceil(duration_seconds / chunk_seconds)
@@ -158,6 +197,9 @@ def transcribe_audio_file(file_path, job_id, model_size="base", chunk_minutes=8)
             transcribed_chunks = []
             
             for i in range(num_chunks):
+                # Watchdog: abort if taking too long
+                if (time.time() - start_ts) > (MAX_TRANSCRIBE_MINUTES * 60):
+                    raise Exception('Transcription timed out')
                 start_time = i * chunk_seconds * 1000
                 end_time = min((i + 1) * chunk_seconds * 1000, len(audio))
                 
@@ -171,8 +213,8 @@ def transcribe_audio_file(file_path, job_id, model_size="base", chunk_minutes=8)
                 
                 # Transcribe chunk
                 try:
-                    chunk_result = model.transcribe(chunk_file)
-                    chunk_text = chunk_result["text"].strip()
+                    chunk_result = transcribe_path(chunk_file)
+                    chunk_text = chunk_result.get("text", "").strip()
                     if chunk_text:
                         transcribed_chunks.append(chunk_text)
                     
@@ -241,15 +283,38 @@ def migrate_database():
             # Try to query is_admin column
             try:
                 db.session.execute(db.text("SELECT is_admin FROM user LIMIT 1"))
+                db.session.execute(db.text("SELECT language FROM transcription LIMIT 1"))
                 print("✓ Database schema is up to date")
             except Exception:
-                print(" Adding is_admin column to user table...")
-                # Add the missing column
-                db.session.execute(db.text("ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
-                db.session.commit()
+                try:
+                    db.session.execute(db.text("ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
+                    db.session.commit()
+                except Exception:
+                    pass
+                try:
+                    db.session.execute(db.text("ALTER TABLE transcription ADD COLUMN language VARCHAR(50) DEFAULT 'auto'"))
+                    db.session.commit()
+                except Exception:
+                    pass
                 print(" Database migration completed successfully")
     except Exception as e:
         print(f" Database migration error: {e}")
+
+def ensure_default_admin():
+    """Ensure the default admin account exists with the expected credentials"""
+    with app.app_context():
+        user = User.query.filter_by(username='admin').first()
+        if user:
+            user.is_admin = True
+            user.set_password('admin123')
+            db.session.commit()
+            print("✓ Default admin ensured: username='admin', password reset")
+        else:
+            user = User(username='admin', email='admin@gmail.com', is_admin=True)
+            user.set_password('admin123')
+            db.session.add(user)
+            db.session.commit()
+            print("✓ Default admin created: username='admin', email='admin@gmail.com'")
 
 # Routes
 @app.route('/')
@@ -295,15 +360,16 @@ def login():
     
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        identifier = form.username.data.strip()
+        # Allow login via username OR email
+        user = User.query.filter(db.or_(User.username == identifier, User.email == identifier)).first()
         
         if user and user.check_password(form.password.data):
             login_user(user)
-            # Removed the flash message - login success is indicated by redirect to dashboard
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard'))
         else:
-            flash('Invalid username or password', 'error')
+            flash('Invalid credentials', 'error')
     
     return render_template('login.html', form=form)
 
@@ -365,8 +431,8 @@ def upload_file():
     # Get file size
     file_size = os.path.getsize(file_path)
     
-    # Get model size from form
-    model_size = request.form.get('model_size', 'base')
+    # Set model size back to base (or your previous default)
+    model_size = 'base'
     
     # Create database record
     transcription = Transcription(
@@ -389,7 +455,7 @@ def upload_file():
     }
     
     # Start transcription in background thread
-    thread = threading.Thread(target=transcribe_audio_file, args=(file_path, job_id, model_size))
+    thread = threading.Thread(target=transcribe_audio_file, args=(file_path, job_id, model_size, 8))
     thread.daemon = True
     thread.start()
     
@@ -484,6 +550,11 @@ def chat_page():
     """AI Assistant chat page"""
     return render_template('chat.html')
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
 # Admin Routes
 @app.route('/admin')
 @login_required
@@ -568,7 +639,7 @@ def admin_transcriptions():
                          status_filter=status_filter,
                          search=search)
 
-@app.route('/admin/user/<int:user_id>')
+@app.route('/admin/user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def admin_user_detail(user_id):
@@ -582,12 +653,65 @@ def admin_user_detail(user_id):
     completed = len([t for t in user_transcriptions if t.status == 'completed'])
     total_file_size = sum([t.file_size or 0 for t in user_transcriptions])
     
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash(f"Password reset for {user.username}", 'success')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    
     return render_template('admin/user_detail.html',
                          user=user,
                          transcriptions=user_transcriptions,
                          total_transcriptions=total_transcriptions,
                          completed_transcriptions=completed,
-                         total_file_size=total_file_size)
+                         total_file_size=total_file_size,
+                         form=form)
+
+@app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    """Admin resets a user's password from the users list page"""
+    user = User.query.get_or_404(user_id)
+    pw = request.form.get('password', '')
+    pw2 = request.form.get('password2', '')
+    if len(pw) < 6:
+        flash('Password must be at least 6 characters', 'error')
+        return redirect(url_for('admin_users', search=request.args.get('search', '')))
+    if pw != pw2:
+        flash('Passwords do not match', 'error')
+        return redirect(url_for('admin_users', search=request.args.get('search', '')))
+    user.set_password(pw)
+    db.session.commit()
+    flash(f"Password reset for {user.username}", 'success')
+    return redirect(url_for('admin_users', search=request.args.get('search', '')))
+
+@app.route('/admin/reset_password_lookup', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password_lookup():
+    # Admin resets a user's password by searching username or email
+    identifier = request.form.get('identifier', '').strip()
+    pw = request.form.get('password', '')
+    pw2 = request.form.get('password2', '')
+    if not identifier:
+        flash('Enter a username or email', 'error')
+        return redirect(url_for('admin_users'))
+    user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+    if not user:
+        flash('User not found', 'error')
+        return redirect(url_for('admin_users'))
+    if len(pw) < 6:
+        flash('Password must be at least 6 characters', 'error')
+        return redirect(url_for('admin_users', search=identifier))
+    if pw != pw2:
+        flash('Passwords do not match', 'error')
+        return redirect(url_for('admin_users', search=identifier))
+    user.set_password(pw)
+    db.session.commit()
+    flash(f"Password reset for {user.username}", 'success')
+    return redirect(url_for('admin_users', search=identifier))
 
 @app.route('/admin/toggle_admin/<int:user_id>')
 @login_required
@@ -642,30 +766,33 @@ def admin_delete_user(user_id):
     flash(f'User {user.username} and all associated data deleted successfully', 'success')
     return redirect(url_for('admin_users'))
 
-@app.route('/admin/delete_transcription/<int:transcription_id>')
+@app.route('/admin/delete_transcription/<int:transcription_id>', methods=['POST'])
 @login_required
 @admin_required
 def admin_delete_transcription(transcription_id):
-    """Delete a specific transcription"""
+    """Delete a specific transcription (POST)"""
     transcription = Transcription.query.get_or_404(transcription_id)
     user_id = transcription.user_id
-    
+    # Remove in-memory status entry if present
+    try:
+        if transcription.job_id in transcription_status:
+            transcription_status.pop(transcription.job_id, None)
+    except Exception:
+        pass
     # Delete files
     try:
         upload_path = os.path.join(app.config['UPLOAD_FOLDER'], transcription.filename)
         if os.path.exists(upload_path):
             os.remove(upload_path)
-        
         if transcription.output_file:
             output_path = os.path.join(app.config['OUTPUT_FOLDER'], transcription.output_file)
             if os.path.exists(output_path):
                 os.remove(output_path)
     except Exception as e:
         print(f"Error deleting files: {e}")
-    
+    # Delete database record
     db.session.delete(transcription)
     db.session.commit()
-    
     flash('Transcription deleted successfully', 'success')
     return redirect(url_for('admin_user_detail', user_id=user_id))
 
@@ -674,7 +801,7 @@ def admin_delete_transcription(transcription_id):
 @admin_required
 def admin_system_stats():
     """System statistics and health"""
-    # System info
+    # Syste
     system_info = {
         'platform': platform.system(),
         'platform_version': platform.version(),
@@ -739,6 +866,7 @@ def create_admin():
             flash('Username already exists. Please choose a different one.', 'error')
             return render_template('admin/create_admin.html', form=form)
         
+        # Fix invalid syntax on email check
         if User.query.filter_by(email=form.email.data).first():
             flash('Email already registered. Please use a different email.', 'error')
             return render_template('admin/create_admin.html', form=form)
@@ -759,6 +887,8 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         migrate_database()
+        # Ensure a default admin exists
+        ensure_default_admin()
     
     print("Starting Transcription Web Server...")
     print("Access the application at: http://localhost:5000")
@@ -766,4 +896,3 @@ if __name__ == '__main__':
 
 
 
-   
